@@ -4,7 +4,7 @@
 
 using namespace geode::prelude;
 
-// Variables globales para persistencia durante la sesión
+// Variables globales
 bool g_holdLevel = false;
 bool g_ignoreClicks = false;
 
@@ -44,9 +44,9 @@ public:
         closeBtn->setPosition({-100, 65});
         menu->addChild(closeBtn);
 
-        // --- TOGGLES (Movidos a la izquierda) ---
-        addToggle(menu, "Hold Level", 1, { -60, 20 }, g_holdLevel);
-        addToggle(menu, "Ignore Clicks", 2, { -60, -20 }, g_ignoreClicks);
+        // Toggles posicionados a la izquierda (doble de su ancho aprox)
+        addToggle(menu, "Hold Level", 1, { -70, 20 }, g_holdLevel);
+        addToggle(menu, "Ignore Clicks", 2, { -70, -20 }, g_ignoreClicks);
 
         return true;
     }
@@ -61,7 +61,7 @@ public:
         auto label = CCLabelBMFont::create(text, "bigFont.fnt");
         label->setScale(0.4f);
         label->setAnchorPoint({0, 0.5});
-        label->setPosition({pos.x + 25, pos.y}); // Texto cerca del check
+        label->setPosition({pos.x + 25, pos.y});
         menu->addChild(label);
     }
 
@@ -70,9 +70,8 @@ public:
         if (sender->getTag() == 1) {
             g_holdLevel = state;
             if (auto pl = PlayLayer::get()) {
-                // Forzamos el estado de salto
-                pl->m_player1->pushButton(PlayerButton::Jump);
-                if (!state) pl->m_player1->releaseButton(PlayerButton::Jump);
+                if (state) pl->m_player1->pushButton(PlayerButton::Jump);
+                else pl->m_player1->releaseButton(PlayerButton::Jump);
             }
         } else {
             g_ignoreClicks = state;
@@ -92,9 +91,9 @@ class $modify(MyPlayLayer, PlayLayer) {
         return true;
     }
 
-    void postUpdate(float dt) {
-        PlayLayer::postUpdate(dt);
-        // Mantiene el botón presionado cada frame si Hold está activo
+    void update(float dt) {
+        PlayLayer::update(dt);
+        // Si hold está activo y no ignoramos clicks, forzamos el salto continuo
         if (g_holdLevel && !g_ignoreClicks) {
             this->m_player1->pushButton(PlayerButton::Jump);
         }
@@ -102,8 +101,10 @@ class $modify(MyPlayLayer, PlayLayer) {
 
     void handleButton(bool hold, int button, bool isPlayer2) {
         if (g_ignoreClicks) return;
-        // Si el usuario presiona manualmente, desactivamos el auto-hold
-        if (hold && g_holdLevel) g_holdLevel = false;
+        // Desactivar hold si el usuario presiona manualmente
+        if (hold && g_holdLevel && button == static_cast<int>(PlayerButton::Jump)) {
+            g_holdLevel = false;
+        }
         PlayLayer::handleButton(hold, button, isPlayer2);
     }
 
@@ -123,12 +124,13 @@ class $modify(MyPauseLayer, PauseLayer) {
         auto side = Mod::get()->getSettingValue<std::string>("button-side");
 
         auto btnSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
-        btnSprite->setScale(0.65f); // Un poco más grande (era 0.5)
+        btnSprite->setScale(0.6f); 
 
         auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(MyPauseLayer::onMySettings));
         auto menu = CCMenu::create();
         
-        float posX = (side == "left") ? 40.f : winSize.width - 40.f; // Más centrado hacia el medio
+        // Un poco más centrado
+        float posX = (side == "left") ? 45.f : winSize.width - 45.f;
         menu->setPosition({posX, winSize.height / 2});
         menu->addChild(btn);
         this->addChild(menu);
