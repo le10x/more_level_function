@@ -4,7 +4,7 @@
 
 using namespace geode::prelude;
 
-// Variables globales para el estado
+// Variables globales
 bool g_holdLevel = false;
 bool g_ignoreClicks = false;
 
@@ -77,31 +77,28 @@ public:
     }
 };
 
-// --- LÓGICA DE INTERCEPTACIÓN (AQUÍ ESTÁ EL TRUCO) ---
+// --- LÓGICA DE JUEGO ---
 class $modify(MyPlayLayer, PlayLayer) {
     
-    // Hook al motor de actualización para inyectar el Hold
     void update(float dt) {
         PlayLayer::update(dt);
 
-        // Si Hold Level está activo, forzamos el salto en el objeto del jugador
+        // Si Hold Level está activo y no ignoramos clicks, forzamos el salto
         if (g_holdLevel && !g_ignoreClicks && m_player1) {
-            // Usamos la función interna que maneja el estado de presión
-            if (!m_player1->m_isHolding) {
-                this->handleButton(true, static_cast<int>(PlayerButton::Jump), false);
-            }
+            // Llamamos a la función de salto del jugador directamente cada frame
+            m_player1->pushButton(PlayerButton::Jump);
         }
     }
 
-    // Hook a la entrada de botones para el Ignore Clicks
     void handleButton(bool hold, int button, bool isPlayer2) {
-        // 1. Si Ignore Clicks está ON, bloqueamos todo
+        // Bloqueo de clicks
         if (g_ignoreClicks) return;
 
-        // 2. Si el usuario presiona el salto manualmente y el Hold está activo, lo desactivamos
+        // Si el usuario hace click manual mientras el auto-hold está puesto, lo quita
         if (hold && g_holdLevel && button == static_cast<int>(PlayerButton::Jump)) {
             g_holdLevel = false;
-            // No retornamos aquí para que el click del usuario SÍ se procese
+            // Soltamos el botón internamente para que el control regrese al usuario
+            m_player1->releaseButton(PlayerButton::Jump);
         }
 
         PlayLayer::handleButton(hold, button, isPlayer2);
