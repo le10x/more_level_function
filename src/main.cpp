@@ -6,7 +6,7 @@
 using namespace geode::prelude;
 
 // --- CLASE PARA EL MENÚ AZUL PERSONALIZADO ---
-class MySettingsPopup : public GeodePopup<CCObject*> {
+class MySettingsPopup : public geode::Popup<CCObject*> {
 protected:
     bool setup(CCObject* obj) override {
         this->setTitle("Level Functions");
@@ -35,10 +35,13 @@ protected:
         auto ignoreLabel = CCLabelBMFont::create("Ignore Clicks", "bigFont.fnt");
         ignoreLabel->setScale(0.5f);
 
-        // Añadir al menú con filas sencillas
+        // Crear filas
         auto row1 = CCMenu::create(holdToggle, holdLabel, nullptr);
+        row1->setContentSize({200, 30});
         row1->setLayout(RowLayout::create()->setGap(10.f));
+        
         auto row2 = CCMenu::create(ignoreToggle, ignoreLabel, nullptr);
+        row2->setContentSize({200, 30});
         row2->setLayout(RowLayout::create()->setGap(10.f));
 
         menu->addChild(row1);
@@ -50,25 +53,24 @@ protected:
 
     void onToggle(CCObject* sender) {
         auto toggle = static_cast<CCMenuItemToggler*>(sender);
-        bool val = !toggle->isToggled(); // Geode togglers son inversos al hacer click
+        // En Geode, isToggled() devuelve el estado visual ANTES del cambio
+        bool newState = !toggle->isToggled(); 
         
-        if (toggle->getTag() == 1) Mod::get()->setSettingValue("hold-level", val);
-        else Mod::get()->setSettingValue("ignore-clicks", val);
-
-        // Actualizar el estado físico en el PlayLayer si existe
-        if (auto pl = PlayLayer::get()) {
-            if (val && toggle->getTag() == 1) {
-                pl->m_player1->pushButton(PlayerButton::Jump);
-            } else if (!val && toggle->getTag() == 1) {
-                pl->m_player1->releaseButton(PlayerButton::Jump);
+        if (toggle->getTag() == 1) {
+            Mod::get()->setSettingValue("hold-level", newState);
+            if (auto pl = PlayLayer::get()) {
+                if (newState) pl->m_player1->pushButton(PlayerButton::Jump);
+                else pl->m_player1->releaseButton(PlayerButton::Jump);
             }
+        } else {
+            Mod::get()->setSettingValue("ignore-clicks", newState);
         }
     }
 
 public:
     static MySettingsPopup* create() {
         auto ret = new MySettingsPopup();
-        if (ret && ret->initAnchored(220, 150, nullptr, "GJ_square01.png")) {
+        if (ret && ret->init(220, 150, nullptr, "GJ_square01.png")) {
             ret->autorelease();
             return ret;
         }
@@ -114,7 +116,7 @@ class $modify(MyPauseLayer, PauseLayer) {
         auto side = Mod::get()->getSettingValue<std::string>("button-side");
 
         auto btnSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
-        btnSprite->setScale(0.5f); // Tamaño a la mitad
+        btnSprite->setScale(0.5f); 
 
         auto btn = CCMenuItemSpriteExtra::create(
             btnSprite, this, menu_selector(MyPauseLayer::onMySettings)
