@@ -8,7 +8,7 @@
 	"name": "Update Tracker",
 	"version": "v1.0.0",
 	"developer": "le10x",
-	"description": "Añade un botón en la búsqueda para ver niveles recientemente actualizados usando la API de GDHistory.",
+	"description": "Add a button to the search to view recently updated levels using the GDHistory API.",
 	"repository": "https://github.com",
 	"tags": ["interface", "search", "utility"]
 }
