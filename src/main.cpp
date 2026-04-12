@@ -4,45 +4,42 @@
 
 using namespace geode::prelude;
 
-// --- LÓGICA DE RESET ---
 class $modify(MyPlayLayer, PlayLayer) {
     bool init(GJGameLevel* level, bool useReplay, bool dontSave) {
         if (!PlayLayer::init(level, useReplay, dontSave)) return false;
 
-        // Si Hold Level está activo, saltamos al inicio
+        // Auto jump at start
         if (Mod::get()->getSettingValue<bool>("hold-level")) {
-            this->pushButton(0, true);
+            this->handleButton(true, static_cast<int>(PlayerButton::Jump), false);
         }
         return true;
     }
 
-    void pushButton(int p0, bool p1) {
-        bool noClicks = Mod::get()->getSettingValue<bool>("deactivate-clicks");
+    void handleButton(bool hold, int button, bool isPlayer2) {
+        bool ignoreClicks = Mod::get()->getSettingValue<bool>("ignore-clicks");
         bool holdActive = Mod::get()->getSettingValue<bool>("hold-level");
 
-        // Si los clicks están desactivados, ignoramos la entrada...
-        // EXCEPTO si Hold Level está activo y queremos que el click NO lo detenga.
-        if (noClicks) return;
+        // If Ignore Clicks is ON, we block all input
+        if (ignoreClicks) return;
 
-        // Si hacemos click y Hold Level está activo, se detiene el auto-hold (si no hay No Clicks)
-        if (holdActive) {
+        // If Hold Level is ON, the first manual click takes control and disables it
+        if (hold && holdActive) {
             Mod::get()->setSettingValue("hold-level", false);
         }
 
-        PlayLayer::pushButton(p0, p1);
+        PlayLayer::handleButton(hold, button, isPlayer2);
     }
 
-    void onQuit() {
-        // Al salir del nivel, si Auto Reset está ON, apagamos todo
+    void onExit() {
+        // Reset settings if Auto Reset is enabled
         if (Mod::get()->getSettingValue<bool>("auto-reset")) {
             Mod::get()->setSettingValue("hold-level", false);
-            Mod::get()->setSettingValue("deactivate-clicks", false);
+            Mod::get()->setSettingValue("ignore-clicks", false);
         }
-        PlayLayer::onQuit();
+        PlayLayer::onExit();
     }
 };
 
-// --- INTERFAZ DE PAUSA ---
 class $modify(MyPauseLayer, PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
@@ -50,26 +47,21 @@ class $modify(MyPauseLayer, PauseLayer) {
         auto winSize = CCDirector::get()->getWinSize();
         auto side = Mod::get()->getSettingValue<std::string>("button-side");
 
-        // Crear botón de configuración (usando textura de Geode)
         auto btnSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
         auto btn = CCMenuItemSpriteExtra::create(
             btnSprite, this, menu_selector(MyPauseLayer::onMySettings)
         );
 
         auto menu = CCMenu::create();
-        if (side == "left") {
-            menu->setPosition({35, winSize.height / 2});
-        } else {
-            menu->setPosition({winSize.width - 35, winSize.height / 2});
-        }
+        float posX = (side == "left") ? 35.f : winSize.width - 35.f;
+        menu->setPosition({posX, winSize.height / 2});
 
         menu->addChild(btn);
         this->addChild(menu);
     }
 
-    void onMySettings(CCObject*) {
-        // Aquí abrimos el menú de configuración del mod directamente
-        // Es la forma más limpia de mostrar los checks que pediste
+    void onMySettings(CCObject* sender) {
         geode::openSettingsPopup(Mod::get());
     }
 };
+            
