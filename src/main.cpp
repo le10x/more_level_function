@@ -4,10 +4,11 @@
 
 using namespace geode::prelude;
 
-// Variables globales
+// Variables globales para el estado
 bool g_holdLevel = false;
 bool g_ignoreClicks = false;
 
+// --- MENÚ PERSONALIZADO ---
 class MySettingsLayer : public FLAlertLayer {
 public:
     static MySettingsLayer* create() {
@@ -44,7 +45,6 @@ public:
         closeBtn->setPosition({-100, 65});
         menu->addChild(closeBtn);
 
-        // Toggles posicionados a la izquierda (doble de su ancho aprox)
         addToggle(menu, "Hold Level", 1, { -70, 20 }, g_holdLevel);
         addToggle(menu, "Ignore Clicks", 2, { -70, -20 }, g_ignoreClicks);
 
@@ -67,15 +67,8 @@ public:
 
     void onToggle(CCObject* sender) {
         bool state = !static_cast<CCMenuItemToggler*>(sender)->isToggled();
-        if (sender->getTag() == 1) {
-            g_holdLevel = state;
-            if (auto pl = PlayLayer::get()) {
-                if (state) pl->m_player1->pushButton(PlayerButton::Jump);
-                else pl->m_player1->releaseButton(PlayerButton::Jump);
-            }
-        } else {
-            g_ignoreClicks = state;
-        }
+        if (sender->getTag() == 1) g_holdLevel = state;
+        else g_ignoreClicks = state;
     }
 
     void onClose(CCObject*) {
@@ -84,27 +77,33 @@ public:
     }
 };
 
+// --- LÓGICA DE INTERCEPTACIÓN (AQUÍ ESTÁ EL TRUCO) ---
 class $modify(MyPlayLayer, PlayLayer) {
-    bool init(GJGameLevel* level, bool useReplay, bool dontSave) {
-        if (!PlayLayer::init(level, useReplay, dontSave)) return false;
-        if (g_holdLevel) this->m_player1->pushButton(PlayerButton::Jump);
-        return true;
-    }
-
+    
+    // Hook al motor de actualización para inyectar el Hold
     void update(float dt) {
         PlayLayer::update(dt);
-        // Si hold está activo y no ignoramos clicks, forzamos el salto continuo
-        if (g_holdLevel && !g_ignoreClicks) {
-            this->m_player1->pushButton(PlayerButton::Jump);
+
+        // Si Hold Level está activo, forzamos el salto en el objeto del jugador
+        if (g_holdLevel && !g_ignoreClicks && m_player1) {
+            // Usamos la función interna que maneja el estado de presión
+            if (!m_player1->m_isHolding) {
+                this->handleButton(true, static_cast<int>(PlayerButton::Jump), false);
+            }
         }
     }
 
+    // Hook a la entrada de botones para el Ignore Clicks
     void handleButton(bool hold, int button, bool isPlayer2) {
+        // 1. Si Ignore Clicks está ON, bloqueamos todo
         if (g_ignoreClicks) return;
-        // Desactivar hold si el usuario presiona manualmente
+
+        // 2. Si el usuario presiona el salto manualmente y el Hold está activo, lo desactivamos
         if (hold && g_holdLevel && button == static_cast<int>(PlayerButton::Jump)) {
             g_holdLevel = false;
+            // No retornamos aquí para que el click del usuario SÍ se procese
         }
+
         PlayLayer::handleButton(hold, button, isPlayer2);
     }
 
@@ -125,11 +124,9 @@ class $modify(MyPauseLayer, PauseLayer) {
 
         auto btnSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
         btnSprite->setScale(0.6f); 
-
         auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(MyPauseLayer::onMySettings));
+
         auto menu = CCMenu::create();
-        
-        // Un poco más centrado
         float posX = (side == "left") ? 45.f : winSize.width - 45.f;
         menu->setPosition({posX, winSize.height / 2});
         menu->addChild(btn);
