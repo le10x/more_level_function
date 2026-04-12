@@ -1,24 +1,30 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelSearchLayer.hpp>
 #include <Geode/utils/web.hpp>
+#include <Geode/loader/Event.hpp>
 
 using namespace geode::prelude;
 
 class $modify(MySearchLayer, LevelSearchLayer) {
+    // Definimos variables que viven dentro del Hook
+    struct Fields {
+        EventListener<web::WebTask> m_listener;
+    };
+
     bool init(int p0) {
         if (!LevelSearchLayer::init(p0)) return false;
 
-        // 1. Crear el sprite del botón (usamos uno de actualización del juego)
+        // 1. Crear el sprite del botón (usamos el icono de refresh/update)
         auto buttonSprite = CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png");
         
-        // 2. Crear el botón y asignarle una función (onHistorySearch)
+        // 2. Crear el botón y asignarle la función
         auto historyBtn = CCMenuItemSpriteExtra::create(
             buttonSprite,
             this,
             menu_selector(MySearchLayer::onHistorySearch)
         );
 
-        // 3. Posicionar el botón en el menú de la derecha
+        // 3. Posicionar el botón en el menú lateral derecho
         auto menu = this->getChildByID("right-side-menu");
         if (menu) {
             menu->addChild(historyBtn);
@@ -29,26 +35,39 @@ class $modify(MySearchLayer, LevelSearchLayer) {
     }
 
     void onHistorySearch(CCObject* sender) {
-        // Mostrar un indicador de carga
+        // Crear un círculo de carga visual
         auto loading = LoadingCircle::create();
         loading->show();
 
-        // 4. Petición a la API de GDHistory (Ejemplo de niveles recientes)
-        // Nota: Ajustar el endpoint según la documentación actual de GDHistory
+        // URL de la API (asegúrate de que el endpoint sea el correcto de GDHistory)
         std::string apiUrl = "https://geometrydash.eu";
 
-        web::WebRequest().get(apiUrl).listen(
-            [this, loading](web::WebResponse* res) {
-                loading->fadeAndRemove();
+        // Configurar el Listener para manejar la respuesta
+        m_fields->m_listener.bind([this, loading](web::WebResponse* res) {
+            // Quitar el círculo de carga al recibir respuesta
+            loading->fadeAndRemove();
+
+            if (res && res->ok()) {
+                // Si la petición fue exitosa (reemplaza a isSuccess)
+                auto data = res->json().unwrapOr(matjson::Value());
                 
-                if (res->isSuccess()) {
-                    auto data = res->json().unwrapOr(matjson::Value());
-                    // Aquí procesarías los IDs y abrirías LevelBrowserLayer
-                    FLAlertLayer::create("Éxito", "Niveles obtenidos de GDHistory", "OK")->show();
-                } else {
-                    FLAlertLayer::create("Error", "No se pudo conectar con GDHistory", "OK")->show();
-                }
+                FLAlertLayer::create(
+                    "GDHistory", 
+                    "¡Conectado con éxito! Aquí cargarías los niveles.", 
+                    "OK"
+                )->show();
+                
+            } else {
+                // Si hubo un error en la red o la API
+                FLAlertLayer::create(
+                    "Error", 
+                    "No se pudo obtener datos de GDHistory.", 
+                    "Aceptar"
+                )->show();
             }
-        );
+        });
+
+        // Ejecutar la petición Web
+        m_fields->m_listener.setFilter(web::WebRequest().get(apiUrl));
     }
 };
