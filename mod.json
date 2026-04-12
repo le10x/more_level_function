@@ -16,7 +16,10 @@
 			"name": "Button Side",
 			"type": "string",
 			"default": "left",
-			"one-of": ["left", "right"]
+			"one-of": [
+				"left",
+				"right"
+			]
 		},
 		"auto-reset": {
 			"name": "Auto Reset",
@@ -24,3 +27,4 @@
 			"default": true
 		}
 	}
+}
