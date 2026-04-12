@@ -7,27 +7,16 @@
 		"ios": "2.2081"
 	},
 	"id": "le10x.more_level_function",
-	"version": "v1.0.0",
+	"version": "v1.1.0",
 	"name": "More Level Function",
 	"developer": "le10x",
 	"description": "Special functions: Hold Level, Ignore Clicks, and Auto Reset.",
 	"settings": {
 		"button-side": {
 			"name": "Button Side",
-			"description": "Side of the pause menu where the settings button appears.",
 			"type": "string",
 			"default": "left",
 			"one-of": ["left", "right"]
-		},
-		"hold-level": {
-			"name": "Hold Level",
-			"type": "bool",
-			"default": false
-		},
-		"ignore-clicks": {
-			"name": "Ignore Clicks",
-			"type": "bool",
-			"default": false
 		},
 		"auto-reset": {
 			"name": "Auto Reset",
@@ -35,4 +24,3 @@
 			"default": true
 		}
 	}
-}
