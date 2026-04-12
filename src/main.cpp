@@ -4,11 +4,14 @@
 
 using namespace geode::prelude;
 
-// Variables globales
-bool g_holdLevel = false;
-bool g_ignoreClicks = false;
+// Estado global estático
+class ModState {
+public:
+    static inline bool holdEnabled = false;
+    static inline bool ignoreEnabled = false;
+};
 
-// --- MENÚ PERSONALIZADO ---
+// --- MENÚ DE FUNCIONES (FLAlertLayer) ---
 class MySettingsLayer : public FLAlertLayer {
 public:
     static MySettingsLayer* create() {
@@ -45,8 +48,9 @@ public:
         closeBtn->setPosition({-100, 65});
         menu->addChild(closeBtn);
 
-        addToggle(menu, "Hold Level", 1, { -70, 20 }, g_holdLevel);
-        addToggle(menu, "Ignore Clicks", 2, { -70, -20 }, g_ignoreClicks);
+        // Toggles con la posición corregida (texto cerca del check)
+        addToggle(menu, "Hold Level", 1, { -70, 20 }, ModState::holdEnabled);
+        addToggle(menu, "Ignore Clicks", 2, { -70, -20 }, ModState::ignoreEnabled);
 
         return true;
     }
@@ -67,8 +71,8 @@ public:
 
     void onToggle(CCObject* sender) {
         bool state = !static_cast<CCMenuItemToggler*>(sender)->isToggled();
-        if (sender->getTag() == 1) g_holdLevel = state;
-        else g_ignoreClicks = state;
+        if (sender->getTag() == 1) ModState::holdEnabled = state;
+        else ModState::ignoreEnabled = state;
     }
 
     void onClose(CCObject*) {
@@ -77,28 +81,27 @@ public:
     }
 };
 
-// --- LÓGICA DE JUEGO ---
+// --- LÓGICA DE JUEGO (Interceptación directa) ---
 class $modify(MyPlayLayer, PlayLayer) {
     
-    void update(float dt) {
-        PlayLayer::update(dt);
+    void postUpdate(float dt) {
+        PlayLayer::postUpdate(dt);
 
-        // Si Hold Level está activo y no ignoramos clicks, forzamos el salto
-        if (g_holdLevel && !g_ignoreClicks && m_player1) {
-            // Llamamos a la función de salto del jugador directamente cada frame
+        if (ModState::holdEnabled && !ModState::ignoreEnabled && m_player1) {
+            // Forzamos el botón de salto directamente en el PlayerObject
+            // Esto suele saltarse la capa de entrada del CBF
             m_player1->pushButton(PlayerButton::Jump);
         }
     }
 
     void handleButton(bool hold, int button, bool isPlayer2) {
-        // Bloqueo de clicks
-        if (g_ignoreClicks) return;
+        // Si Ignore Clicks está activo, no dejamos pasar la señal a RobTop
+        if (ModState::ignoreEnabled) return;
 
-        // Si el usuario hace click manual mientras el auto-hold está puesto, lo quita
-        if (hold && g_holdLevel && button == static_cast<int>(PlayerButton::Jump)) {
-            g_holdLevel = false;
-            // Soltamos el botón internamente para que el control regrese al usuario
-            m_player1->releaseButton(PlayerButton::Jump);
+        // Si el jugador presiona manualmente, desactivamos el auto-hold
+        if (hold && ModState::holdEnabled && button == static_cast<int>(PlayerButton::Jump)) {
+            ModState::holdEnabled = false;
+            if (m_player1) m_player1->releaseButton(PlayerButton::Jump);
         }
 
         PlayLayer::handleButton(hold, button, isPlayer2);
@@ -106,13 +109,14 @@ class $modify(MyPlayLayer, PlayLayer) {
 
     void onExit() {
         if (Mod::get()->getSettingValue<bool>("auto-reset")) {
-            g_holdLevel = false;
-            g_ignoreClicks = false;
+            ModState::holdEnabled = false;
+            ModState::ignoreEnabled = false;
         }
         PlayLayer::onExit();
     }
 };
 
+// --- BOTÓN DE PAUSA ---
 class $modify(MyPauseLayer, PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
@@ -120,11 +124,12 @@ class $modify(MyPauseLayer, PauseLayer) {
         auto side = Mod::get()->getSettingValue<std::string>("button-side");
 
         auto btnSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
-        btnSprite->setScale(0.6f); 
-        auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(MyPauseLayer::onMySettings));
+        btnSprite->setScale(0.65f); 
 
+        auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(MyPauseLayer::onMySettings));
         auto menu = CCMenu::create();
-        float posX = (side == "left") ? 45.f : winSize.width - 45.f;
+        
+        float posX = (side == "left") ? 40.f : winSize.width - 40.f;
         menu->setPosition({posX, winSize.height / 2});
         menu->addChild(btn);
         this->addChild(menu);
