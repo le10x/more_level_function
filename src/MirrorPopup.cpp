@@ -4,7 +4,8 @@ using namespace geode::prelude;
 
 MirrorPopup* MirrorPopup::create() {
     auto ret = new MirrorPopup();
-    if (ret && ret->initAnchored(220.f, 150.f)) {
+    // Pasamos un string vacío como argumento del template
+    if (ret && ret->initAnchored(220.f, 150.f, "")) {
         ret->autorelease();
         return ret;
     }
@@ -12,7 +13,7 @@ MirrorPopup* MirrorPopup::create() {
     return nullptr;
 }
 
-bool MirrorPopup::setup() {
+bool MirrorPopup::setup(std::string const& value) {
     this->setTitle("Level Settings");
 
     auto pl = PlayLayer::get();
@@ -34,8 +35,8 @@ bool MirrorPopup::setup() {
     menu->setLayout(RowLayout::create()->setGap(10.f));
     menu->setPosition({110.f, 70.f});
     
-    // Asegúrate de que esto esté así:
-    this->m_mainLayer->addChild(menu);
+    // Si m_mainLayer falla, usamos m_buttonMenu que siempre existe en Popups
+    this->m_buttonMenu->getParent()->addChild(menu);
     
     return true;
 }
