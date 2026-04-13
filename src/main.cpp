@@ -5,7 +5,8 @@
 
 using namespace geode::prelude;
 
-bool g_originalMirrorState = false;
+// Variable global para el estado original
+static bool g_originalMirrorState = false;
 
 class $modify(MyPlayLayer, PlayLayer) {
     bool init(GJGameLevel* level, bool useReplay, bool dontSave) {
