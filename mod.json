@@ -1,13 +1,23 @@
 {
 	"geode": "5.5.3",
-	"gd": {
-		"win": "2.2081",
-		"android": "2.2081"
-	},
 	"id": "le10x.more_level_function",
 	"name": "More Level Function",
-	"version": "v1.0.0",
 	"developer": "le10x",
-	"description": "More level options.",
+	"version": "1.0.0",
+	"description": "Adds extra level functions, starting with a Mirror Mode toggle in the pause menu.",
 	"repository": "https://github.com",
+	"gd": {
+		"win": "2.2081",
+		"android": "2.2081",
+		"mac": "2.2081",
+		"ios": "2.2081"
+	},
+	"settings": {
+		"mirror-reset-on-death": {
+			"name": "Mirror Reset On Death",
+			"description": "If enabled, Mirror Mode will revert to its original state upon death.",
+			"type": "bool",
+			"default": true
+		}
+	}
 }
