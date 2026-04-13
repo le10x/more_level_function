@@ -10,19 +10,23 @@ bool g_originalMirrorState = false;
 class $modify(MyPlayLayer, PlayLayer) {
     bool init(GJGameLevel* level, bool useReplay, bool dontSave) {
         if (!PlayLayer::init(level, useReplay, dontSave)) return false;
-        g_originalMirrorState = m_levelSettings->m_mirrorMode;
+        if (m_levelSettings) {
+            g_originalMirrorState = m_levelSettings->m_mirrorMode;
+        }
         return true;
     }
 
     void resetLevel() {
         PlayLayer::resetLevel();
-        if (Mod::get()->getSettingValue<bool>("mirror-reset-on-death")) {
+        if (m_levelSettings && Mod::get()->getSettingValue<bool>("mirror-reset-on-death")) {
             m_levelSettings->m_mirrorMode = g_originalMirrorState;
         }
     }
 
     void onQuit() {
-        m_levelSettings->m_mirrorMode = g_originalMirrorState;
+        if (m_levelSettings) {
+            m_levelSettings->m_mirrorMode = g_originalMirrorState;
+        }
         PlayLayer::onQuit();
     }
 };
@@ -40,7 +44,6 @@ class $modify(MyPauseLayer, PauseLayer) {
 
         auto menu = CCMenu::create();
         menu->addChild(gearBtn);
-        // Posición a la izquierda, similar al original
         menu->setPosition({35, 35});
         menu->setID("le10x-settings-menu"_spr);
 
@@ -48,6 +51,8 @@ class $modify(MyPauseLayer, PauseLayer) {
     }
 
     void onOpenMirrorMenu(CCObject* sender) {
-        MirrorPopup::create()->show();
+        if (auto popup = MirrorPopup::create()) {
+            popup->show();
+        }
     }
 };
