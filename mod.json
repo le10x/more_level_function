@@ -4,11 +4,10 @@
 		"win": "2.2081",
 		"android": "2.2081"
 	},
-	"id": "mod.test",
-	"name": "Mod Test",
+	"id": "le10x.more_level_function",
+	"name": "More Level Function",
 	"version": "v1.0.0",
 	"developer": "le10x",
-	"description": "Add a button to the search to view recently updated levels using the GDHistory API.",
+	"description": "More level options.",
 	"repository": "https://github.com",
-	"tags": ["interface", "search", "utility"]
 }
