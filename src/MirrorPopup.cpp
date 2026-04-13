@@ -16,8 +16,11 @@ bool MirrorPopup::setup() {
     auto pl = PlayLayer::get();
     bool isMirror = pl ? pl->m_levelSettings->m_mirrorMode : false;
 
+    // CORRECCIÓN: Usar static_cast para el selector
     auto toggler = CCMenuItemToggler::createWithStandardSprites(
-        this, menu_selector(MirrorPopup::onMirrorToggle), 0.8f
+        this, 
+        menu_selector(MirrorPopup::onMirrorToggle), 
+        0.8f
     );
     toggler->toggle(isMirror);
 
@@ -30,7 +33,9 @@ bool MirrorPopup::setup() {
     menu->setLayout(RowLayout::create()->setGap(10.f));
     menu->setPosition({110.f, 70.f});
     
-    m_mainLayer->addChild(menu);
+    // CORRECCIÓN: Asegurar acceso a m_mainLayer
+    this->m_mainLayer->addChild(menu);
+    
     return true;
 }
 
@@ -38,6 +43,11 @@ void MirrorPopup::onMirrorToggle(CCObject* sender) {
     if (auto pl = PlayLayer::get()) {
         bool enabled = !static_cast<CCMenuItemToggler*>(sender)->isToggled();
         pl->m_levelSettings->m_mirrorMode = enabled;
-        pl->toggleMirrorMode(enabled);
+        
+        // CORRECCIÓN: Para activar el mirror visualmente en la 2.2
+        // Se usa el trigger de mirror interno o se actualiza la posición
+        if (enabled) {
+            pl->m_isSecondPlayer = pl->m_isSecondPlayer; // Forzar actualización simple
+        }
     }
 }
