@@ -3,7 +3,8 @@
 
 using namespace geode::prelude;
 
-class MirrorPopup : public Geode::Popup<> {
+// Cambiado Geode::Popup por geode::Popup
+class MirrorPopup : public geode::Popup<> {
 protected:
     bool setup() override;
     void onMirrorToggle(CCObject* sender);
