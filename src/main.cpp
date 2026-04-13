@@ -1,54 +1,53 @@
 #include <Geode/Geode.hpp>
-#include <Geode/modify/LevelSearchLayer.hpp>
-#include <Geode/utils/web.hpp>
+#include <Geode/modify/PlayLayer.hpp>
+#include <Geode/modify/PauseLayer.hpp>
+#include "MirrorPopup.hpp"
 
 using namespace geode::prelude;
 
-class $modify(MySearchLayer, LevelSearchLayer) {
-    // Definimos el listener usando el tipo Task genérico
-    struct Fields {
-        EventListener<web::WebTask> m_listener; 
-    };
+bool g_originalMirrorState = false;
 
-    bool init(int p0) {
-        if (!LevelSearchLayer::init(p0)) return false;
-
-        auto buttonSprite = CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png");
-        
-        auto historyBtn = CCMenuItemSpriteExtra::create(
-            buttonSprite,
-            this,
-            menu_selector(MySearchLayer::onHistorySearch)
-        );
-
-        auto menu = this->getChildByID("right-side-menu");
-        if (menu) {
-            menu->addChild(historyBtn);
-            menu->updateLayout();
-        }
-
+class $modify(MyPlayLayer, PlayLayer) {
+    bool init(GJGameLevel* level, bool useReplay, bool dontSave) {
+        if (!PlayLayer::init(level, useReplay, dontSave)) return false;
+        g_originalMirrorState = m_levelSettings->m_mirrorMode;
         return true;
     }
 
-    void onHistorySearch(CCObject* sender) {
-        auto loading = LoadingCircle::create();
-        loading->show();
+    void resetLevel() {
+        PlayLayer::resetLevel();
+        if (Mod::get()->getSettingValue<bool>("mirror-reset-on-death")) {
+            m_levelSettings->m_mirrorMode = g_originalMirrorState;
+        }
+    }
 
-        std::string apiUrl = "https://geometrydash.eu";
+    void onQuit() {
+        m_levelSettings->m_mirrorMode = g_originalMirrorState;
+        PlayLayer::onQuit();
+    }
+};
 
-        // Usamos m_fields->m_listener para capturar la tarea
-        m_fields->m_listener.bind([this, loading](web::WebResponse* res) {
-            loading->fadeAndRemove();
+class $modify(MyPauseLayer, PauseLayer) {
+    void customSetup() {
+        PauseLayer::customSetup();
 
-            if (res && res->ok()) {
-                FLAlertLayer::create("GDHistory", "Conexión exitosa", "OK")->show();
-            } else {
-                FLAlertLayer::create("Error", "No se pudo obtener datos", "OK")->show();
-            }
-        });
+        auto gearSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
+        gearSprite->setScale(0.7f);
 
-        // Iniciamos la petición
-        auto req = web::WebRequest();
-        m_fields->m_listener.setFilter(req.get(apiUrl));
+        auto gearBtn = CCMenuItemSpriteExtra::create(
+            gearSprite, this, menu_selector(MyPauseLayer::onOpenMirrorMenu)
+        );
+
+        auto menu = CCMenu::create();
+        menu->addChild(gearBtn);
+        // Posición a la izquierda, similar al original
+        menu->setPosition({35, 35});
+        menu->setID("le10x-settings-menu"_spr);
+
+        this->addChild(menu);
+    }
+
+    void onOpenMirrorMenu(CCObject* sender) {
+        MirrorPopup::create()->show();
     }
 };
