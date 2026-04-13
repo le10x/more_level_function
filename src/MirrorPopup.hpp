@@ -1,13 +1,12 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include <Geode/ui/Popup.hpp>
 
-using namespace geode::prelude;
-
-class MirrorPopup : public geode::Popup<> {
+class MirrorPopup : public geode::Popup<std::string const&> {
 protected:
-    bool setup() override;
+    bool setup(std::string const& value) override;
     void onMirrorToggle(cocos2d::CCObject* sender);
+
 public:
+    // Cambiamos el create para que coincida con el nuevo setup
     static MirrorPopup* create();
 };
