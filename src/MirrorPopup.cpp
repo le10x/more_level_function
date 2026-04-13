@@ -1,5 +1,7 @@
 #include "MirrorPopup.hpp"
 
+using namespace geode::prelude;
+
 MirrorPopup* MirrorPopup::create() {
     auto ret = new MirrorPopup();
     if (ret && ret->initAnchored(220.f, 150.f)) {
@@ -14,7 +16,6 @@ bool MirrorPopup::setup() {
     this->setTitle("Level Settings");
 
     auto pl = PlayLayer::get();
-    // Verificamos que PlayLayer y levelSettings existan para evitar crasheos
     bool isMirror = (pl && pl->m_levelSettings) ? pl->m_levelSettings->m_mirrorMode : false;
 
     auto toggler = CCMenuItemToggler::createWithStandardSprites(
@@ -33,16 +34,16 @@ bool MirrorPopup::setup() {
     menu->setLayout(RowLayout::create()->setGap(10.f));
     menu->setPosition({110.f, 70.f});
     
-    m_mainLayer->addChild(menu);
+    // Asegúrate de que esto esté así:
+    this->m_mainLayer->addChild(menu);
     
     return true;
 }
 
-void MirrorPopup::onMirrorToggle(CCObject* sender) {
+void MirrorPopup::onMirrorToggle(cocos2d::CCObject* sender) {
     auto pl = PlayLayer::get();
     if (pl && pl->m_levelSettings) {
         bool enabled = !static_cast<CCMenuItemToggler*>(sender)->isToggled();
         pl->m_levelSettings->m_mirrorMode = enabled;
-        // En la 2.2, el cambio visual se aplica al resetear o por triggers.
     }
 }
