@@ -1,6 +1,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+#include <Geode/ui/GeodeUI.hpp> // <--- ESTO ES VITAL
 
 using namespace geode::prelude;
 
@@ -11,9 +12,9 @@ int g_deaths = 0;
 CCLabelBMFont* g_deathLabel = nullptr;
 
 // --- Popup del Menú ---
-class MyModMenu : public geode::Popup<> {
+class MyModMenu : public geode::Popup<float, float> {
 protected:
-    bool setup() override {
+    bool setup(float p0, float p1) override {
         this->setTitle("Mi Mod Menu");
 
         auto menu = CCMenu::create();
@@ -21,9 +22,8 @@ protected:
         m_mainLayer->addChild(menu);
 
         // Noclip Toggle
-        // Usamos static_cast<cocos2d::CCObject*> para evitar el error de rvalue
         auto noclipBtn = CCMenuItemToggler::createWithStandardSprites(
-            static_cast<cocos2d::CCObject*>(this), 
+            this, 
             menu_selector(MyModMenu::onNoclip), 
             0.8f
         );
@@ -31,7 +31,7 @@ protected:
 
         // Safe Mode Toggle
         auto safeBtn = CCMenuItemToggler::createWithStandardSprites(
-            static_cast<cocos2d::CCObject*>(this), 
+            this, 
             menu_selector(MyModMenu::onSafeMode), 
             0.8f
         );
@@ -45,10 +45,9 @@ protected:
     }
 
 public:
-    static MyModMenu* create() {
+    static MyModMenu* create(float width, float height) {
         auto ret = new MyModMenu();
-        // Cambiamos initAnchored por el init estándar de Geode si el template falla
-        if (ret && ret->init(220, 150)) {
+        if (ret && ret->initAnchored(width, height)) {
             ret->autorelease();
             return ret;
         }
@@ -68,7 +67,6 @@ class $modify(MyPauseLayer, PauseLayer) {
         auto menu = CCMenu::create();
         auto winSize = CCDirector::get()->getWinSize();
         menu->setPosition({40, winSize.height - 40});
-        menu->setID("my-quick-menu");
         this->addChild(menu);
 
         auto spr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
@@ -81,14 +79,11 @@ class $modify(MyPauseLayer, PauseLayer) {
     }
 
     void onMyMenu(CCObject* sender) {
-        auto popup = MyModMenu::create();
-        if (popup) {
-            popup->show();
-        }
+        MyModMenu::create(220.f, 150.f)->show();
     }
 };
 
-// --- Lógica de Juego (PlayLayer) ---
+// --- Lógica de Juego ---
 class $modify(MyPlayLayer, PlayLayer) {
     void destroyPlayer(PlayerObject* p, GameObject* obj) {
         if (g_noclip) {
@@ -108,8 +103,7 @@ class $modify(MyPlayLayer, PlayLayer) {
         g_deathLabel = CCLabelBMFont::create("Muertes: 0", "bigFont.fnt");
         g_deathLabel->setScale(0.4f);
         g_deathLabel->setPosition({40, 20});
-        g_deathLabel->setZOrder(100);
-        this->addChild(g_deathLabel);
+        this->addChild(g_deathLabel, 100);
         
         return true;
     }
