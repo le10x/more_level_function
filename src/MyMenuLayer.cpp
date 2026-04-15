@@ -1,9 +1,9 @@
 #include "MyMenuLayer.hpp"
 
-MyMenuLayer* MyMenuLayer::create() {
+MyMenuLayer* MyMenuLayer::create(float width, float height) {
     auto ret = new MyMenuLayer();
-    // 240.f es el ancho, 160.f es el alto
-    if (ret && ret->init(240.f, 160.f)) { 
+    // Pasamos el ancho y alto al init
+    if (ret && ret->init(width, height)) {
         ret->autorelease();
         return ret;
     }
@@ -11,13 +11,12 @@ MyMenuLayer* MyMenuLayer::create() {
     return nullptr;
 }
 
-bool MyMenuLayer::setup() {
-    // El botón de cerrar (X) se crea SOLO gracias a geode::Popup
+bool MyMenuLayer::setup(float p0, float p1) {
+    // Ahora setTitle y m_mainLayer funcionarán porque heredamos correctamente
     this->setTitle("Mi Mod Menu");
     
-    // El color de fondo suele ser el marrón oscuro de GD por defecto.
-    // Si quieres añadir un texto simple:
     auto label = CCLabelBMFont::create("Hola!", "bigFont.fnt");
+    // m_mainLayer es la capa principal del Popup
     label->setPosition(m_mainLayer->getContentSize() / 2);
     m_mainLayer->addChild(label);
 
