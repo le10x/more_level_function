@@ -4,9 +4,9 @@
 
 using namespace geode::prelude;
 
-class MyMenuLayer : public geode::Popup<> {
+class MyMenuLayer : public geode::Popup<float, float> {
 protected:
-    bool setup() override; 
+    bool setup(float p0, float p1) override; 
 public:
-    static MyMenuLayer* create();
+    static MyMenuLayer* create(float width, float height);
 };
