@@ -1,9 +1,9 @@
 #include "MyMenuLayer.hpp"
 
 MyMenuLayer* MyMenuLayer::create() {
-    // Definimos el tamaño de la ventana (Ancho, Alto)
     auto ret = new MyMenuLayer();
-    if (ret && ret->init(250.f, 150.f)) {
+    // 240.f es el ancho, 160.f es el alto
+    if (ret && ret->init(240.f, 160.f)) { 
         ret->autorelease();
         return ret;
     }
